@@ -7,7 +7,7 @@ import { useReactToPrint } from 'react-to-print';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import io from 'socket.io-client';
-import logo from '../src/hexa_img3.png';
+// import logo from '../src/hexa_img3.png';
 
 
 const API_ENDPOINT = process.env.REACT_APP_new_url;
