@@ -2,7 +2,7 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Crown, FileText, Sun, Moon, Loader, Download, Star, MessageSquare } from 'lucide-react';
+import { FileText, Sun, Moon, Loader, Download, Star, MessageSquare } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
