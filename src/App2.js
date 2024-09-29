@@ -10,7 +10,7 @@ import io from 'socket.io-client';
 import logo from '../src/hexa_img3.png';
 
 
-const API_ENDPOINT = 'http://localhost:5000';
+const API_ENDPOINT = process.env.REACT_APP_new_url;
 const socket = io(API_ENDPOINT);
 
 const AdvancedQAGenerator = () => {
@@ -117,6 +117,7 @@ const AdvancedQAGenerator = () => {
             toast.error('Failed to submit feedback. Please try again.');
         }
     };
+    // console.log("hi ", process.env)
 
     return (
         <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
