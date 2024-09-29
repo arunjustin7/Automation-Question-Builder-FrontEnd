@@ -130,9 +130,9 @@ const AdvancedQAGenerator = () => {
                             transition={{ duration: 0.5 }}
                             className="absolute top-0 left-0 p-4"
                         >
-                            <div className="flex justify-center items-center">
+                            {/* <div className="flex justify-center items-center">
                                 <img src={logo} className="h-28 w-30 max-h-full max-w-full object-contain" alt="Logo" />
-                            </div>
+                            </div> */}
                             {/* <img src={logo} className='h-15 w-30 ' /> */}
                             {/* <Crown size={70} className="text-purple-700 dark:text-purple-300" /> */}
                         </motion.div>
