@@ -2,13 +2,15 @@ import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { useDropzone } from 'react-dropzone';
 import axios from 'axios';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText, Sun, Moon, Loader, Download, Star, MessageSquare } from 'lucide-react';
+import { Mail, FileText, Sun, Moon, Loader, Download, Star, MessageSquare } from 'lucide-react';
 import { useReactToPrint } from 'react-to-print';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import io from 'socket.io-client';
-// import logo from '../src/hexa_img3.png';
-
+// import EmailSubscription from "./email"
+import PDFEmailSender from "./email"
+import 'react-responsive-modal/styles.css';
+import { Modal } from 'react-responsive-modal';
 
 const API_ENDPOINT = process.env.REACT_APP_new_url;
 const socket = io(API_ENDPOINT);
@@ -18,6 +20,7 @@ const AdvancedQAGenerator = () => {
     const [action, setAction] = useState('');
     const [numQuestions, setNumQuestions] = useState(1);
     const [difficulty, setDifficulty] = useState('medium');
+    const [taxonomy, setTaxonomy] = useState('remember');
     const [question, setQuestion] = useState('');
     const [result, setResult] = useState('');
     const [tokenCount, setTokenCount] = useState(null);
@@ -30,6 +33,10 @@ const AdvancedQAGenerator = () => {
     const [feedbackComment, setFeedbackComment] = useState('');
 
     const contentRef = useRef();
+    const [open, setOpen] = useState(false);
+
+    const onToggleModal = () => setOpen(s => !s);
+
 
     useEffect(() => {
         if (darkMode) {
@@ -66,6 +73,15 @@ const AdvancedQAGenerator = () => {
         setError('');
     };
 
+    const taxonomyLevels = [
+        { value: 'remember', label: 'Remember' },
+        { value: 'understand', label: 'Understand' },
+        { value: 'apply', label: 'Apply' },
+        { value: 'analyze', label: 'Analyze' },
+        { value: 'evaluate', label: 'Evaluate' },
+        { value: 'create', label: 'Create' }
+    ];
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
@@ -79,6 +95,7 @@ const AdvancedQAGenerator = () => {
         formData.append('action', action);
         formData.append('numQuestions', numQuestions);
         formData.append('difficulty', difficulty);
+        formData.append('taxonomy', taxonomy);
         if (action === 'QA') {
             formData.append('question', question);
         }
@@ -117,7 +134,6 @@ const AdvancedQAGenerator = () => {
             toast.error('Failed to submit feedback. Please try again.');
         }
     };
-    // console.log("hi ", process.env)
 
     return (
         <div className={`min-h-screen ${darkMode ? 'dark' : ''}`}>
@@ -130,14 +146,9 @@ const AdvancedQAGenerator = () => {
                             transition={{ duration: 0.5 }}
                             className="absolute top-0 left-0 p-4"
                         >
-                            {/* <div className="flex justify-center items-center">
-                                <img src={logo} className="h-28 w-30 max-h-full max-w-full object-contain" alt="Logo" />
-                            </div> */}
-                            {/* <img src={logo} className='h-15 w-30 ' /> */}
-                            {/* <Crown size={70} className="text-purple-700 dark:text-purple-300" /> */}
                         </motion.div>
                         <h1 className="text-4xl font-bold text-center text-purple-700 dark:text-purple-300 mt-8">
-                            Automation  Question Builder
+                            Automated  Question Builder
                         </h1>
                         <div className="flex justify-end mt-4">
                             <motion.button
@@ -147,7 +158,7 @@ const AdvancedQAGenerator = () => {
                                 className="px-4 py-2 rounded-full bg-purple-500 text-white shadow-lg transition-colors duration-300 flex items-center space-x-2"
                             >
                                 {darkMode ? <Sun size={20} /> : <Moon size={20} />}
-                                <span>{darkMode ? 'Light' : 'Dark'} Realm</span>
+                                <span>{darkMode ? 'Light' : 'Dark'} Mode</span>
                             </motion.button>
                         </div>
                     </header>
@@ -167,9 +178,9 @@ const AdvancedQAGenerator = () => {
                                     <input {...getInputProps()} />
                                     <FileText size={48} className="mx-auto text-purple-500 group-hover:text-purple-600 transition-colors" />
                                     {isDragActive ? (
-                                        <p className="mt-4 text-purple-600 dark:text-purple-300">Drop the royal scroll here...</p>
+                                        <p className="mt-4 text-purple-600 dark:text-purple-300">Drop the  file her</p>
                                     ) : (
-                                        <p className="mt-4 text-purple-600 dark:text-purple-300">Summon a PDF scroll, or drag and drop it here</p>
+                                        <p className="mt-4 text-purple-600 dark:text-purple-300">Please select the file, or drag and drop it here</p>
                                     )}
                                     {file && <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">{file.name}</p>}
                                 </div>
@@ -188,6 +199,8 @@ const AdvancedQAGenerator = () => {
                                             <option value="Fill-in-the-Blank" className=' text-purple-600 dark:text-purple-300'>Fill-in-the-blanks</option>
                                             <option value="True-False" className=' text-purple-600 dark:text-purple-300'>True-False</option>
                                             <option value="Short-Answer" className=' text-purple-600 dark:text-purple-300'>Short-Answer</option>
+                                            <option value="Summary" className=' text-purple-600 dark:text-purple-300'>Summarize Document</option>
+                                            <option value="KeyPoints" className=' text-purple-600 dark:text-purple-300'>Extract Key Points</option>
 
                                         </select>
                                     </div>
@@ -217,6 +230,20 @@ const AdvancedQAGenerator = () => {
                                                     <option value="hard" className=' text-purple-600 dark:text-purple-300'>Hard</option>
                                                 </select>
                                             </div>
+                                            <div>
+                                                <label className="block text-xl font-medium text-purple-600 dark:text-purple-300">Taxonomy Level</label>
+                                                <select
+                                                    value={taxonomy}
+                                                    onChange={(e) => setTaxonomy(e.target.value)}
+                                                    className="mt-1 block w-full rounded-sm px-2 py-1 border border-gray-300 shadow-sm focus:border-purple-500 focus:ring-purple-500"
+                                                >
+                                                    {taxonomyLevels.map(level => (
+                                                        <option key={level.value} value={level.value}>
+                                                            {level.label}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
                                         </>
                                     )}
                                     {action === 'QA' && (
@@ -243,7 +270,7 @@ const AdvancedQAGenerator = () => {
                                         {loading ? (
                                             <Loader className="animate-spin h-6 w-5 mr-3" />
                                         ) : (
-                                            'Generate Royal Knowledge'
+                                            'Generate Automated Questions'
                                         )}
                                     </button>
                                 </div>
@@ -261,16 +288,11 @@ const AdvancedQAGenerator = () => {
                                     ref={contentRef}
                                 >
                                     <div className="px-6 py-4">
-                                        <h3 className="text-2xl font-bold text-purple-800 dark:text-purple-200">Royal Decree</h3>
+                                        <h3 className="text-2xl font-bold text-purple-800 dark:text-purple-200">Generated  Questions</h3>
                                     </div>
-                                    {/* <div className="prose dark:prose-invert max-w-none">
-                                        {result.split('\n').map((line, index) => (
-                                            <p key={index}>{line}</p>
-                                        ))}
-                                    </div> */}
                                     <dl>
                                         <div className="border-t border-purple-200 dark:border-purple-700 bg-purple-50 px-6 py-5 grid grid-cols-3 gap-4 dark:bg-purple-900" ref={contentRef}>
-                                            <dt className="text-sm font-medium text-purple-600 dark:text-purple-300">Royal Proclamation</dt>
+                                            <dt className="text-sm font-medium text-purple-600 dark:text-purple-300">Questions</dt>
                                             <dd className="mt-1 text-sm text-purple-900 col-span-2 dark:text-purple-100">
                                                 <pre className="whitespace-pre-wrap">{result}</pre>
                                             </dd>
@@ -280,51 +302,49 @@ const AdvancedQAGenerator = () => {
                                                 onClick={handlePrint}
                                                 className="flex items-center space-x-1 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
                                             >
-                                                <Download size={16} />
+                                                <Download size={20} />
                                                 <span>Download</span>
+                                            </button>
+                                            <button
+                                                onClick={onToggleModal}
+                                                className="flex items-center space-x-1 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
+                                            >
+                                                <Mail size={20} />
+                                                <span>send mail</span>
                                             </button>
                                             <button
                                                 onClick={() => setShowFeedback(true)}
                                                 className="flex items-center space-x-1 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-colors"
                                             >
-                                                <MessageSquare size={16} />
+                                                <MessageSquare size={20} />
                                                 <span>Feedback</span>
                                             </button>
                                         </div>
-                                        {/* <div className="px-6 py-5 flex justify-end">
-                                            <motion.button
-                                                whileHover={{ scale: 1.05 }}
-                                                whileTap={{ scale: 0.95 }}
-                                                onClick={handlePrint}
-                                                className="flex items-center space-x-2 px-4 py-2 bg-purple-600 text-white rounded-md shadow-md hover:bg-purple-700 transition-colors duration-300"
-                                            >
-                                                <Download size={20} />
-                                                <span>Create PDF</span>
-                                            </motion.button>
-                                        </div> */}
+                                        <Modal open={open} onClose={onToggleModal} center>
+                                            <PDFEmailSender
+                                                generatedContent={result}
+                                                onToggleModal={onToggleModal}
+                                            // costDetails={{
+                                            //     token_count: tokenCount,
+                                            //     embedding_cost: embeddingCost
+                                            // }}
+                                            />
+                                        </Modal>
+
                                         {tokenCount && (
                                             <div className="bg-purple-50 px-6 py-5 grid grid-cols-3 gap-4 dark:bg-purple-900">
-                                                <dt className="text-sm font-medium text-purple-600 dark:text-purple-300">Royal Word Count</dt>
+                                                <dt className="text-sm font-medium text-purple-600 dark:text-purple-300"> Token Count</dt>
                                                 <dd className="mt-1 text-sm text-purple-900 col-span-2 dark:text-purple-100">{tokenCount}</dd>
                                             </div>
                                         )}
                                         {embeddingCost && (
                                             <div className="px-6 py-5 grid grid-cols-3 gap-4">
-                                                <dt className="text-sm font-medium text-purple-600 dark:text-purple-300">Royal Treasury Expense</dt>
+                                                <dt className="text-sm font-medium text-purple-600 dark:text-purple-300">Total Token cost</dt>
                                                 <dd className="mt-1 text-sm text-purple-900 col-span-2 dark:text-purple-100">${embeddingCost.toFixed(4)}</dd>
                                             </div>
                                         )}
                                     </dl>
-                                    {/* <div className="mt-4 flex justify-between items-center">
-                                        <div>
-                                            <p className="text-sm  text-purple-300 dark:text-purple-600">
-                                                Token Count: {tokenCount}
-                                            </p>
-                                            <p className="text-sm text-gray-500 dark:text-gray-400">
-                                                Embedding Cost: ${embeddingCost?.toFixed(4)}
-                                            </p>
-                                        </div>
-                                    </div> */}
+
                                 </motion.div>
                             )}
                         </AnimatePresence>
@@ -344,8 +364,6 @@ const AdvancedQAGenerator = () => {
                     </main>
                 </div>
             </div>
-
-            {/* Feedback Modal */}
             {showFeedback && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
                     <div className="bg-white dark:bg-gray-800 p-6 rounded-lg max-w-md w-full">
@@ -398,3 +416,5 @@ const AdvancedQAGenerator = () => {
 };
 
 export default AdvancedQAGenerator;
+
+
